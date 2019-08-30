@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">   
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="renderer" content="webkit">
+    <meta charset="UTF-8"/>
+
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap-datepicker.min.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/jquery-confirm.min.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="/static/js/jquery-confirm.min.js"></script>
+
+    <title>首页</title>
+</head>
+<body>
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <div class="btn-group">
+                <button class="btn btn-success btn-default" type="button" onclick="showSaveModal();"><em class="glyphicon glyphicon-plus"></em>添加</button>
+                <button class="btn btn-info btn-default" type="button" onclick="location.reload();"><em class="glyphicon glyphicon-refresh"></em>刷新</button>
+            </div>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>编号</th>
+                        <th>姓名</th>
+                        <th>下次时间</th>
+                        <th>详情</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user,iterStat : ${users}">
+                        <td th:text="${iterStat.count}">无</td>
+                        <td>
+                            <a th:text="${user.name}" type="button" class="btn-success btn-link" th:onclick="updateUser([[${user.id}]]);">姓名</a>
+                        </td>
+                        <td th:text="${#dates.format(user.nextUseDate, 'MM-dd E')}"> 01/04/2012 </td>
+                        <td>
+                            <a type="button" class="btn-default btn-link" th:onclick="infoUse([[${user.id}]]);">查看</a>
+                        </td>
+                        <td>
+                            <a type="button" class="btn-default btn-link" th:onclick="deleteUser([[${user.id}]], [[${user.name}]]);">删除</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="myModalLabel">用户详情</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered" style="margin-bottom: 0;">
+                    <thead>
+                    <tr>
+                        <th>次数</th>
+                        <th>名称</th>
+                        <th>时间</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="infoUse"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                <h4 class="modal-title" id="saveModalLabel">添加用户</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" role="form" method="get" action="save" id="formInfo" onsubmit="return submitFun();">
+                    <div class="form-group">
+                        <label for="name" class="col-sm-2 control-label">名字</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="name" placeholder="请输入名字" name="name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="datetimepicker" class="col-sm-2 control-label">首次使用时间</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" readonly id="datetimepicker" placeholder="点击编辑时间" name="date">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="demo" class="col-sm-2 control-label">备注</label>
+                        <div class="col-sm-10">
+                            <textarea style="height: 100px;" type="text" class="form-control" id="demo" placeholder="请输入备注" name="demo"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="$('#formInfo').submit();">保存</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
+
+</body>
+<script type="text/javascript" src="/static/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap-datepicker.zh-CN.min.js"></script>
+
+<script>
+    /*显示添加模态框*/
+    function showSaveModal(){
+        $('#formInfo')[0].reset();
+        $('#saveModal').modal('show');
+    }
+
+    /*编辑名字和备注*/
+    function updateUser(id) {
+        $.confirm({
+            title: "编辑用户",
+            content: "<div class=\"form-group\">\n" +
+                "                        <label for=\"name\" class=\"col-sm-2 control-label\">名字</label>\n" +
+                "                        <div class=\"col-sm-10\">\n" +
+                "                            <input type=\"text\" class=\"form-control\" id=\"newName\" placeholder=\"请输入名字\">\n" +
+                "                        </div>\n" +
+                "                    </div>"+
+                "<div class=\"form-group\">\n" +
+                "                        <label for=\"demo\" class=\"col-sm-2 control-label\">备注</label>\n" +
+                "                        <div class=\"col-sm-10\">\n" +
+                "                            <textarea style=\"height: 100px;\" type=\"text\" class=\"form-control\" id=\"newDemo\" placeholder=\"请输入备注\"></textarea>\n" +
+                "                        </div>\n" +
+                "                    </div>",
+            type: 'blue',
+            onOpenBefore: function () {
+                $.get("getUserById?id="+id, function (user) {
+                    $('#newName').val(user.name);
+                    $('#newDemo').val(user.demo);
+                });
+            },
+            buttons: {
+                取消: function () {
+                },
+                ok: {
+                    text: "确定",
+                    btnClass: 'btn-success',
+                    action: function () {
+                        var user = {
+                            id : id,
+                            name : $('#newName').val(),
+                            demo : $('#newDemo').val()
+                        };
+                        $.post('updateUser', user, function (data) {
+                            location.reload();
+                        });
+
+                    }
+                }
+            }
+        });
+    }
+
+    /*查看数据*/
+    function infoUse(id) {
+        var url = "/user/getUseList?id=" + id;
+        $.get(url, function (data) {
+            // 列表信息
+            var list = data.useDateList;
+            var tbody =  $('#infoUse');
+            tbody.empty();
+            for (var i in list) {
+                var use = list[i];
+                var isGreat = eqDate(use.useDate);
+                if (isGreat){
+                    tbody.append(
+                        "<tr class='success'>" +
+                        "<td>"+use.times+"</td>" +
+                        "<td>"+use.name+"</td>" +
+                        "<td>"+use.useDate+"</td>" +
+                        "<td><a type='button' class='btn-default btn-link' onclick='updateUseDate("+use.id+");'>修改</a></td>" +
+                        "</tr>");
+                } else {
+                    tbody.append(
+                        "<tr class='info'>" +
+                        "<td>"+use.times+"</td>" +
+                        "<td>"+use.name+"</td>" +
+                        "<td>"+use.useDate+"</td>" +
+                        "<td><a type='button' class='btn-default btn-link' onclick='updateUseDate("+use.id+");'>修改</a></td>" +
+                        "</tr>");
+                }
+            }
+
+            tbody.append(
+                "<tr >" +
+                    "<td colspan='4'>备注："+data.user.demo+"</td>" +
+                "</tr>")
+            $('#myModal').modal('show');
+        });
+    }
+    function submitFun(){
+        var name = $('#name').val();
+        var datetimepicker = $('#datetimepicker').val();
+        if (!name || !datetimepicker) {
+            alert("请将数据填写完整");
+            return false;
+        } else{
+            return true;
+        }
+    }
+    /*修改使用日期*/
+    function updateUseDate(id) {
+        $.confirm({
+            title: "编辑日期",
+            content: '<input type="text" class="form-control" readonly id="updaPicker" placeholder="点击编辑时间">',
+            type: 'blue',
+            onContentReady: function () {
+                $('#updaPicker').datepicker({
+                    format: 'yyyy-mm-dd',
+                    language:'zh-CN',
+                    autoclose:true,
+                    todayBtn:true,
+                    todayHighlight:true
+                });
+            },
+            buttons: {
+                取消: function () {
+                },
+                ok: {
+                    text: "确定",
+                    btnClass: 'btn-success',
+                    action: function () {
+                        var update = $('#updaPicker').val();
+                        $.get('updateUseDate?id='+id+"&update="+update, function (data) {
+                            infoUse(data.userId);
+                        });
+                    }
+                }
+            }
+        });
+    }
+    
+    /*删除用户*/
+    function deleteUser(id, name){
+        $.confirm({
+            theme: 'light',
+            title: false,
+            content: '是否删除【'+name+'】?',
+            type: 'red',
+            buttons: {
+                取消: function () {
+                },
+                ok: {
+                    text: "删除",
+                    btnClass: 'btn-danger',
+                    action: function () {
+                        location.href = 'delete?id=' + id;
+                    }
+                }
+            }
+        });
+    }
+
+
+    $('#datetimepicker').datepicker({
+        format: 'yyyy-mm-dd',
+        language:'zh-CN',
+        autoclose:true,
+        todayBtn:true,
+        todayHighlight:true
+    });
+
+    function eqDate(date){
+        var curr = new Date();
+        var currDate = new Date(curr.getFullYear()+"-"+(curr.getMonth()+1)+"-"+curr.getDate());
+        var usdDate = new Date(date);
+        if(currDate.getTime() > usdDate.getTime()){
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+</script>
+</html>
