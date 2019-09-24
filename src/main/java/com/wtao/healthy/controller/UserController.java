@@ -11,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -102,6 +99,48 @@ public class UserController {
             useDateService.save(useDate);
         }
         response.sendRedirect("index");
+    }
+
+    /**
+     * 根据用户id获取最后一次的下一次应该使用的日期
+     * @param interval 下一次的间隔(单位:天)
+     * @param id 用户id
+     * @return 下一次使用时间
+     */
+    @GetMapping("getNextDateByUserId")
+    public Date getLastUseDateByUserId(Long id, @RequestParam(value = "interval", required = false, defaultValue = "14") Integer interval) {
+        UseDate useDate = useDateService.lambdaQuery()
+                .eq(UseDate::getUserId, id)
+                .orderByDesc(UseDate::getId)
+                .last("limit 1")
+                .one();
+        Calendar instance = Calendar.getInstance();
+        instance.setTime(useDate.getUseDate());
+        instance.add(Calendar.DATE, interval);
+        Date nextDate = instance.getTime();
+        return nextDate;
+    }
+
+    /**
+     * 新添加一条用户使用记录
+     * @param userId 用户id
+     * @param date 添加的时间
+     */
+    @GetMapping("addUseDate")
+    public Boolean addUseDate(Long userId, @DateTimeFormat(pattern = "yyyy-MM-dd") Date date){
+
+        // 用户下现有使用次数
+        Integer count = useDateService.lambdaQuery().eq(UseDate::getUserId, userId).count();
+
+        UseDate useDate = new UseDate();
+        useDate.setUseDate(date);
+        useDate.setName("第" + (count + 1) + "次使用");
+        useDate.setTimes(count + 1);
+        useDate.setUserId(userId);
+
+        // 添加一条使用记录
+        boolean save = useDateService.save(useDate);
+        return save;
     }
 
     @GetMapping("delete")

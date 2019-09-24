@@ -65,6 +65,10 @@
                 <h4 class="modal-title" id="myModalLabel">用户详情</h4>
             </div>
             <div class="modal-body">
+                <p>
+                    <input type="hidden" name="userId" id="userId"/>
+                    <button type="button" class="btn btn-success" onclick="addUseDate();">新增</button>
+                </p>
                 <table class="table table-bordered" style="margin-bottom: 0;">
                     <thead>
                     <tr>
@@ -184,6 +188,9 @@
 
     /*查看数据*/
     function infoUse(id) {
+        // 将模态框绑定一个userId
+        $('#userId').val(id);
+
         var url = "/user/getUseList?id=" + id;
         $.get(url, function (data) {
             // 列表信息
@@ -229,6 +236,47 @@
             return true;
         }
     }
+
+    function addUseDate() {
+
+        // 用户id
+        var userId = $('#userId').val();
+
+        $.confirm({
+            title: "新增使用记录",
+            content: '<input type="text" class="form-control" readonly id="addUseDatePicker" placeholder="点击编辑时间"><p style="color: #888;margin: 5px;">默认:最后一次间隔两周时间</p>',
+            type: 'green',
+            onContentReady: function () {
+                $.get('getNextDateByUserId?id='+userId, function (data) {
+                    $('#addUseDatePicker').val(data);
+                    $('#addUseDatePicker').datepicker({
+                        format: 'yyyy-mm-dd',
+                        language:'zh-CN',
+                        autoclose:true,
+                        todayBtn:true,
+                        todayHighlight:true
+                    });
+                });
+            },
+            buttons: {
+                取消: function () {
+                },
+                ok: {
+                    text: "确定",
+                    btnClass: 'btn-success',
+                    action: function () {
+                        var date = $('#addUseDatePicker').val();
+                        $.get('addUseDate?userId='+userId+"&date="+date, function (data) {
+                            if (data) {
+                                infoUse(userId);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     /*修改使用日期*/
     function updateUseDate(id) {
         $.confirm({
