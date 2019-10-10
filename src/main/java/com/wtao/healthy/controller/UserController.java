@@ -14,6 +14,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -39,6 +41,7 @@ public class UserController {
     private IUseDateService useDateService;
 
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    public static final String HEALTH_ADMIN_ID = "health_admin_id";
 
     @GetMapping("getUseList")
     public Object getUseList(Long id) {
@@ -56,8 +59,17 @@ public class UserController {
     }
 
     @GetMapping("index")
-    public Object index(ModelAndView modelAndView) {
-        List<User> users = userService.lambdaQuery().orderByDesc(User::getId).list();
+    public Object index(ModelAndView modelAndView, HttpServletRequest request) {
+
+        Long adminId = getAdminIdByCookie(request);
+
+        if (adminId == null) {
+            modelAndView.setViewName("login");
+            return modelAndView;
+        }
+
+
+        List<User> users = userService.lambdaQuery().eq(User::getAdminId, adminId).orderByDesc(User::getId).list();
         List<UserVo> userVos = users.stream().map(e -> transForUserVo(e)).collect(Collectors.toList());
 
         modelAndView.addObject("users", userVos);
@@ -66,8 +78,12 @@ public class UserController {
     }
 
     @GetMapping("save")
-    public void save(User user, @DateTimeFormat(pattern = "yyyy-MM-dd") Date date, HttpServletResponse response) throws IOException {
+    public void save(User user, @DateTimeFormat(pattern = "yyyy-MM-dd") Date date, HttpServletResponse response, HttpServletRequest request) throws IOException {
+
+        Long adminId = getAdminIdByCookie(request);
+
         user.setCreateDate(new Date());
+        user.setAdminId(adminId);
         userService.save(user);
         Long userId = user.getId();
 
@@ -228,5 +244,19 @@ public class UserController {
             userVo.setNextUseDate(useDate.getUseDate());
         }
         return userVo;
+    }
+
+    private Long getAdminIdByCookie(HttpServletRequest request) {
+
+        Long adminId = null;
+        Cookie[] cookies = request.getCookies();
+        if(cookies != null && cookies.length > 0){
+            for (Cookie cookie : cookies){
+                if (cookie.getName().equals(HEALTH_ADMIN_ID)) {
+                    adminId = Long.parseLong(cookie.getValue());
+                }
+            }
+        }
+        return adminId;
     }
 }

@@ -21,9 +21,9 @@ public class MyGenerator {
         // 全局配置
         GlobalConfig gc = new GlobalConfig();
         String projectPath = System.getProperty("user.dir");
-        System.out.println(projectPath);
+
         gc.setOutputDir(projectPath + "/src/main/java");
-        gc.setAuthor("jobob");
+        gc.setAuthor("wtao");
         gc.setOpen(false);
         // gc.setSwagger2(true); 实体属性 Swagger2 注解
         mpg.setGlobalConfig(gc);

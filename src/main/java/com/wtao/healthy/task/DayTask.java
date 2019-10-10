@@ -1,7 +1,9 @@
 package com.wtao.healthy.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.wtao.healthy.entity.Admin;
 import com.wtao.healthy.entity.User;
+import com.wtao.healthy.service.IAdminService;
 import com.wtao.healthy.service.IUseDateService;
 import com.wtao.healthy.service.IUserService;
 import com.wtao.healthy.util.SendMsgUtil;
@@ -23,37 +25,42 @@ public class DayTask {
     private IUserService userService;
     @Autowired
     private IUseDateService useDateService;
+    @Autowired
+    private IAdminService adminService;
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     @Scheduled(cron = "0 0 9,19 * * ? ")
     public void dayTask() throws ParseException {
         String currentDay = DATE_FORMAT.format(new Date());
-        log.info("当前时间是:{}", currentDay);
 
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.inSql("id", "SELECT user_id FROM use_date WHERE use_date = '" + currentDay + "'");
-        List<User> users = userService.list(queryWrapper);
+        // 查询所有管理
+        List<Admin> adminList = adminService.list();
+        for (Admin admin : adminList) {
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("admin_id", admin.getId())
+                    .inSql("id", "SELECT user_id FROM use_date WHERE use_date = '" + currentDay + "'");
+            List<User> users = userService.list(queryWrapper);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("今天是：" + currentDay + "\r\n");
-        if (users.size() > 0) {
-            sb.append("需要提醒的人有:[");
-            for (int i = 0; i < users.size(); i++) {
-                if (i != 0) {
-                    sb.append("、");
+            StringBuilder sb = new StringBuilder("今天是：" + currentDay + "\r\n");
+            if (users.size() > 0) {
+                sb.append("需要提醒的人有:[");
+                for (int i = 0; i < users.size(); i++) {
+                    if (i != 0) {
+                        sb.append("、");
+                    }
+                    sb.append( users.get(i).getName());
                 }
-                sb.append( users.get(i).getName());
+                sb.append("]");
+            } else {
+                sb.append("恭喜你！今天没有需要提醒的人。");
             }
-            sb.append("]");
-        } else {
-            sb.append("恭喜你！今天没有需要提醒的人。");
+
+            String msg = sb.toString();
+            SendMsgUtil.mySend(admin.getMobile(), msg);
+            log.info("已经发送短信,内容为:{}", msg);
         }
 
-        String msg = sb.toString();
-        SendMsgUtil.mySend("18211036881", msg);
-        // SendMsgUtil.mySend("13426194436", msg);
-        log.info("已经发送短信,内容为:{}", msg);
     }
 
 }
