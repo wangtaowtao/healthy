@@ -46,6 +46,10 @@ public class Admin implements Serializable {
     private String mobile;
 
     /**
+     * 是否开启通知
+     */
+    private Integer isNotify;
+    /**
      * 创建日期
      */
     private Date createDate;

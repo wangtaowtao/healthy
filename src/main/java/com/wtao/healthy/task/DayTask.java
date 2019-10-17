@@ -1,6 +1,7 @@
 package com.wtao.healthy.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.wtao.healthy.common.Constant;
 import com.wtao.healthy.entity.Admin;
 import com.wtao.healthy.entity.User;
 import com.wtao.healthy.service.IAdminService;
@@ -8,6 +9,7 @@ import com.wtao.healthy.service.IUseDateService;
 import com.wtao.healthy.service.IUserService;
 import com.wtao.healthy.util.SendMsgUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -57,8 +59,11 @@ public class DayTask {
             }
 
             String msg = sb.toString();
-            SendMsgUtil.mySend(admin.getMobile(), msg);
-            log.info("已经发送短信,内容为:{}", msg);
+            // 开启通知 & 有手机号
+            if (admin.getIsNotify() == Constant.OPRN_NOTIFY && StringUtils.isNoneBlank(admin.getMobile())) {
+                SendMsgUtil.mySend(admin.getMobile(), msg);
+                log.info("已经发送短信,内容为:{}", msg);
+            }
         }
 
     }
